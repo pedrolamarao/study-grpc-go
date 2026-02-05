@@ -2,7 +2,7 @@ edition = "2024";
 
 package br.dev.purpura.study.grpc;
 
-option go_package = "purpura.dev.br/study/grpc/protocol";
+option go_package = "purpura.dev.br/study/service/protocol";
 
 message Request {
   string message = 1;

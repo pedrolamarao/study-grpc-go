@@ -1,34 +1,48 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
 
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
+	"purpura.dev.br/study/grpc/server/auth"
+	"purpura.dev.br/study/grpc/server/config"
 
 	protocol "purpura.dev.br/study/grpc/protocol"
+	"purpura.dev.br/study/grpc/server/service"
 )
 
-type service struct {
-	protocol.UnimplementedProtocolServer
-}
-
-func (_ *service) Operation(_ context.Context, request *protocol.Request) (*protocol.Response, error) {
-	response := &protocol.Response_builder{
-		Message: proto.String("Test"),
-	}
-	return response.Build(), nil
-}
-
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
+	cfg, err := config.LoadAuthConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	jwtValidator, err := auth.NewValidator(cfg.Domain, cfg.Audience)
+	if err != nil {
+		log.Fatalf("Failed to create validator: %v", err)
+	}
+
+	jwtValidatorInterceptor := service.NewJwtInterceptor(jwtValidator)
+
+	svc := service.Service{}
+
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(jwtValidatorInterceptor.Intercept),
+		grpc.StreamInterceptor(jwtValidatorInterceptor.InterceptStream),
+	)
+	protocol.RegisterProtocolServer(server, &svc)
+
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := grpc.NewServer()
-	protocol.RegisterProtocolServer(server, &service{})
+
 	err = server.Serve(listener)
 	if err != nil {
 		log.Fatal(err)
