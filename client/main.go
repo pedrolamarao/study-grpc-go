@@ -1,33 +1,28 @@
+// Copyright (c) 2025 Pedro Lamarão. All rights reserved.
+
 package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net/http"
+	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"purpura.dev.br/study/grpc/client/auth"
 
-	protocol "purpura.dev.br/study/grpc/protocol"
+	"purpura.dev.br/study/grpc/protocol"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+	if len(os.Args) < 2 {
+		log.Fatal("usage: client (port) get|put|clear (name) [value]")
 	}
+	port := os.Args[1]
+	command := os.Args[2]
 
-	token, err := auth.RequestAuthorization(http.DefaultClient, "br.dev.purpura.study.query br.dev.purpura.study.update")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	connection, err := grpc.NewClient("127.0.0.1:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	connection, err := grpc.NewClient(port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,15 +33,38 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
-
-	request := protocol.Request_builder{
-		Message: proto.String("Hello!"),
+	switch command {
+	case "get":
+		request := protocol.GetRequest_builder{
+			Name: proto.String(os.Args[3]),
+		}
+		response, err := requestor.Get(ctx, request.Build())
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Print(response.GetValue())
+	case "put":
+		if len(os.Args) < 5 {
+			log.Fatal("usage: client (port) put (name) (value)")
+		}
+		value := os.Args[4]
+		request := protocol.SetRequest_builder{
+			Name:  proto.String(os.Args[3]),
+			Value: proto.String(value),
+		}
+		_, err := requestor.Set(ctx, request.Build())
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "clear":
+		request := protocol.ClearRequest_builder{
+			Name: proto.String(os.Args[3]),
+		}
+		_, err := requestor.Clear(ctx, request.Build())
+		if err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("invalid command: ", command)
 	}
-	response, err := requestor.Operation(ctx, request.Build())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Print(response.GetMessage())
 }
