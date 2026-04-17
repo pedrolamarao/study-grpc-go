@@ -12,8 +12,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 
-	"purpura.dev.br/study/grpc/protocol"
+	"purpura.dev.br/study/protocol"
 )
+
+func closeOrPanic(closeable *grpc.ClientConn) {
+	if err := closeable.Close(); err != nil {
+		log.Fatal(err)
+	}
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -26,7 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer connection.Close()
+	defer closeOrPanic(connection)
 
 	requestor := protocol.NewProtocolClient(connection)
 

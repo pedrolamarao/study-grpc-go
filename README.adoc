@@ -1,17 +1,10 @@
 = study-grpc-go
-:author: Pedro Lamarão <pedro.lamarao@gmail.com>
+:author: Pedro Lamarão <pedro.unglue658@passinbox.com>
 :icons: font
 
-Preparar:
+Estudo sobre gRPC em linguagem Go.
 
-[source,shell]
-----
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-go install github.com/favadi/protoc-go-inject-tag@latest
-----
-
-Gerar protocolo:
+Gerar o protocolo:
 
 [source,shell]
 ----

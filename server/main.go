@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
-	"purpura.dev.br/study/grpc/protocol"
+	"purpura.dev.br/study/protocol"
 )
 
 type service struct {
@@ -61,12 +61,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	slog.Info("listen", slog.String("port", listener.Addr().String()))
 
 	server := grpc.NewServer()
 	protocol.RegisterProtocolServer(server, service)
 	err = server.Serve(listener)
 	if err != nil {
-		slog.Error("", err)
+		log.Fatal(err)
 	}
+
+	slog.Info("listen", slog.String("port", listener.Addr().String()))
 }
