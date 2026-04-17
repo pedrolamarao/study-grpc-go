@@ -1,8 +1,8 @@
 edition = "2024";
 
-package br.dev.purpura.study.grpc;
+package br.dev.pedrolamarao.study;
 
-option go_package = "purpura.dev.br/study/grpc/protocol";
+option go_package = "pedrolamarao.dev.br/study/protocol";
 
 message GetRequest {
   string name = 1;
